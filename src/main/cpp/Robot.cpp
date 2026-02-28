@@ -38,9 +38,10 @@ void Robot::TeleopInit() {
 }
 
 void Robot::TeleopPeriodic() {
-    double strafing;
+    double strafe;
     double lateral;
     double distance;//value to tell you how far your camera is from the april tag
+    double AprilTagAngle;
     double rotation;//rotational input for drivetrain
     double angleDerivative= 0.05;//These are tuners       it works don't question
     double angleIntegral=0;//frc::SmartDashboard::GetNumber("Integral", 0);//These are tuners          it smooths the motion on the robot.
@@ -50,15 +51,21 @@ void Robot::TeleopPeriodic() {
     double distDerivative=0; //Rate of change of your proportional, smooths out the change
     frc::PIDController distTargetingPID(distProptional,distIntegral,distDerivative); //PID to maintain dist to target
     frc::PIDController angleTargetingPID{angleProptional,angleIntegral,angleDerivative}; //PID to maintain angle to target
+    
     if(driverController.GetAButton()){
         frc::SmartDashboard::PutBoolean("TV", driverController.GetAButton());
         if(tagTargeting(12, &distance, &rotation)){
             frc::SmartDashboard::PutNumber("Angle PID Result:", .1*angleTargetingPID.Calculate(rotation,0));
+            rotation = .1*angleTargetingPID.Calculate(rotation,0);
             frc::SmartDashboard::PutNumber("Distance PID Result:", distTargetingPID.Calculate(distance,1));
-            m_container.aimedDrive.RotationalRate = rotation;
-            m_container.aimedDrive.VelocityX = strafing;
-            m_container.aimedDrive.VelocityY = lateral;
-            m_container.drivetrain.ApplyRequest(aimedDrive);
+            lateral = distTargetingPID.Calculate(distance,1);
+
+            m_container.drivetrain.SetControl(
+              m_container.aimedDrive.WithVelocityX(lateral* m_container.get_max_speed())
+                                    .WithVelocityY(strafe*m_container.get_max_speed())
+                                    .WithRotationalRate(rotation*m_container.get_max_angleRate())
+            );
+
             //DriveTrain.tankDrive(-1*distTargetingPID.Calculate(distance,1.5),-1*angleTargetingPID.Calculate(rotation,0)); // While the A button is pressed it gets your dist and angle from ID 12 to maintain 1.5m dist and 0 degree angle
             frc::SmartDashboard::PutNumber("Rotation:",rotation);
             frc::SmartDashboard::PutNumber("Distance:",distance);
@@ -72,6 +79,11 @@ void Robot::TeleopPeriodic() {
         frc::SmartDashboard::PutBoolean("TV", driverController.GetAButton());
         //DriveTrain.tankDrive(0, angleTargetingPID.Calculate(0,0));
   }
+    if (driverController.GetXButton()) {
+        rotationalValues(26, &distance, &AprilTagAngle, 5.75, 10);
+        frc::SmartDashboard::PutNumber("Distance To AprilTag", distance);
+        frc::SmartDashboard::PutNumber("Angle to AprilTag", AprilTagAngle);
+    };
 }
 
 void Robot::TeleopExit() {}

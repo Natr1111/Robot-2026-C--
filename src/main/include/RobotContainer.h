@@ -18,9 +18,12 @@ private:
     swerve::requests::FieldCentric drive = swerve::requests::FieldCentric{}
         .WithDeadband(MaxSpeed * 0.1).WithRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
         .WithDriveRequestType(swerve::DriveRequestType::OpenLoopVoltage); // Use open-loop control for drive motors
-    swerve::requests::RobotCentric aimedDrive = swerve::requests::RobotCentric{}
-        .WithDeadband(MaxSpeed*0.1).WithRotationalDeadband(MaxAngularRate*0.1)
-        .WithDriveRequestType(swerve::DriveRequestType::OpenLoopVoltage);
+
+    // swerve::requests::RobotCentric aimedDrive = swerve::requests::RobotCentric{}
+    //     .WithDeadband(MaxSpeed*0.1).WithRotationalDeadband(MaxAngularRate*0.1) //Add a 10% deadband
+    //     .WithDriveRequestType(swerve::DriveRequestType::OpenLoopVoltage)
+    //     .WithSteerRequestType(swerve::SteerRequestType::Position);
+
     swerve::requests::SwerveDriveBrake brake{};
     swerve::requests::PointWheelsAt point{};
 
@@ -32,15 +35,22 @@ private:
 
 public:
     subsystems::CommandSwerveDrivetrain drivetrain{TunerConstants::CreateDrivetrain()};
-    void setAimedValues(double rotation, double straiffe, double lateral){
-        aimedDrive.RotationalRate(rotation);
-        aimedDrive.VelocityX = (lateral);
-        aimedDrive.VelocityY = (straiffe);
-        drivetrain.ApplyRequest(aimedDrive);
-        return;
-    }
-    RobotContainer();
 
+    swerve::requests::RobotCentric aimedDrive = swerve::requests::RobotCentric{}
+        .WithDeadband(MaxSpeed*0.1).WithRotationalDeadband(MaxAngularRate*0.1) //Add a 10% deadband
+        .WithDriveRequestType(swerve::DriveRequestType::OpenLoopVoltage)
+        .WithSteerRequestType(swerve::SteerRequestType::Position);
+
+    // void setAimedValues(double rotation, double strafe, double lateral){
+    //     // drivetrain.ApplyRequest([this]() -> auto&& {
+    //     //     return aimedDrive.WithVelocityX(lateral * MaxSpeed) // Drive forward with negative Y (forward)
+    //     //         .WithVelocityY(strafe * MaxSpeed) // Drive left with negative X (left)
+    //     //         .WithRotationalRate(rotation * MaxAngularRate) // Drive counterclockwise with negative X (left)
+    //     // })
+    // }
+    RobotContainer();
+    units::meters_per_second_t get_max_speed(){return MaxSpeed;}
+    units::radians_per_second_t get_max_angleRate(){return MaxAngularRate;}
     frc2::CommandPtr GetAutonomousCommand();
 
 private:
